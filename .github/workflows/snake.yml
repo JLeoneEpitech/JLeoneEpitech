@@ -55,7 +55,7 @@ jobs:
           if not cells:
               raise ValueError("No contribution cells in the source SVG")
           
-          active_days = sum(len(rows) for rows in columns.values())
+
           # Give each active column one stop, with a new itinerary at each daily refresh.
           random = Random(datetime.now(timezone.utc).date().isoformat())
           route = [(x, random.choice(sorted(rows))) for x, rows in sorted(columns.items())]
@@ -83,7 +83,7 @@ jobs:
           """
           parts = [f'''<svg xmlns="http://www.w3.org/2000/svg" width="880" height="206" viewBox="-22 -63 880 206" role="img" aria-labelledby="title desc">
           <title id="title">Atelier de contributions</title>
-          <desc id="desc">Un robot suspendu visite les colonnes actives dans un ordre mélangé. Il frappe une case par colonne, tandis que les {active_days} jours actifs restent visibles.</desc>
+          <desc id="desc">Un robot suspendu visite les colonnes actives dans un ordre mélangé. Il frappe une case par colonne.</desc>
           <style>{style}</style>
           <path d="M-16 -51H848M-16 -45H848" fill="none" stroke="#304451" stroke-width="1"/>
           <path d="M-16 -53v10m864-10v10" stroke="#5b7987" stroke-width="1.4"/>
@@ -141,10 +141,10 @@ jobs:
                   '</g>',
               ])
           
-          label = "1 jour actif" if active_days == 1 else f"{active_days} jours actifs"
+
           parts.append(f'''<g font-family="monospace" font-size="12" fill="#8596a3">
           <text x="2" y="133"><tspan fill="#53d9df">❯</tspan> Atelier de contributions</text>
-          <text x="842" y="133" text-anchor="end">{label}</text>
+
           </g></svg>''')
           svg = "\n".join(parts)
           ET.fromstring(svg)
