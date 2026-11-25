@@ -25,71 +25,128 @@ jobs:
         with:
           github_user_name: ${{ github.repository_owner }}
           outputs: |
-            assets/github-snake.svg?color_snake=#53d9df&color_dots=#18212c,#153b40,#1e6269,#30969a,#61cbd0
-      - name: Build AI robot and preserve every contribution
+            contributions-source.svg?color_snake=#53d9df&color_dots=#18212c,#153b40,#1e6269,#30969a,#61cbd0
+      - name: Render suspended contribution robot
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
           import xml.etree.ElementTree as ET
-          from html import escape
           
-          path = Path('assets/github-snake.svg')
-          source = ET.fromstring(path.read_text())
-          css = next(node.text for node in source if node.tag.endswith('style'))
-          levels = dict(re.findall(r'\.c\.(c\w+)\{fill:var\(--c([1-4])\)', css))
-          palette = ['#18212c', '#153b40', '#1e6269', '#30969a', '#61cbd0']
-          cells, active = [], []
+          source = ET.parse("contributions-source.svg").getroot()
+          path = Path("assets/contribution-atelier.svg")
+          css = next(node.text for node in source if node.tag.endswith("style"))
+          levels = dict(re.findall(r"\.c\.(c\w+)\{fill:var\(--c([1-4])\)", css))
+          palette = ["#18212c", "#153b40", "#1e6269", "#30969a", "#61cbd0"]
+          
+          cells = []
+          columns = {}
           for node in source:
-              classes = node.get('class', '').split()
-              if not node.tag.endswith('rect') or not classes or classes[0] != 'c':
+              classes = node.get("class", "").split()
+              if not node.tag.endswith("rect") or not classes or classes[0] != "c":
                   continue
-              level = int(levels.get(classes[1], 0)) if len(classes) > 1 else 0
-              x, y = float(node.get('x')), float(node.get('y'))
+              level = int(levels[classes[1]]) if len(classes) > 1 else 0
+              x, y = float(node.get("x")), float(node.get("y"))
               cells.append(f'<rect x="{x:g}" y="{y:g}" width="12" height="12" rx="2" fill="{palette[level]}"/>')
               if level:
-                  active.append((x + 6, y + 6))
-          active.sort()
-          route = active or [(8, 8)]
-          positions = []
-          for x, y in route:
-              positions.extend([f'{x:g} {y:g}'] * 3)
-          positions.append(positions[0])
-          duration = max(12, len(route) * 1.2)
-          motion = ';'.join(positions)
-          style = '''
-          .robot-sway{transform-box:fill-box;transform-origin:50% 100%;animation:sway 1.5s ease-in-out infinite}
-          @keyframes sway{0%,100%{transform:rotate(-9deg) translateY(0)}50%{transform:rotate(9deg) translateY(-2px)}}
-          .eyes{animation:blink 4.7s linear infinite}
-          @keyframes blink{0%,44%,48%,100%{opacity:1}46%{opacity:.15}}
-          .task{opacity:0;animation:task 12s linear infinite}
-          @keyframes task{0%,30%{opacity:1}33%,100%{opacity:0}}
-          .reduced{display:none}
-          @media(prefers-reduced-motion:reduce){.moving{display:none}.reduced{display:inline}.task{animation:none;opacity:0}.task:first-of-type{opacity:1}.robot-sway,.eyes{animation:none}}
-          '''
-          robot = '''
-          <ellipse cx="0" cy="3" rx="9" ry="2.5" fill="#53d9df" opacity=".18"/>
-          <g class="robot-sway">
-            <path d="M0 -23v-4" stroke="#53d9df" stroke-width="1.5"/>
-            <circle cy="-28" r="2" fill="#a8f6f5"/>
-            <rect x="-8" y="-23" width="16" height="12" rx="4" fill="#53d9df"/>
-            <rect x="-6" y="-21" width="12" height="7" rx="2.5" fill="#0d2831"/>
-            <g class="eyes" fill="#a8f6f5"><circle cx="-3" cy="-17.5" r="1.2"/><circle cx="3" cy="-17.5" r="1.2"/></g>
-            <rect x="-5.5" y="-9" width="11" height="8" rx="2.5" fill="#30969a"/>
-            <circle cy="-5" r="1.5" fill="#a8f6f5"/>
-            <path d="M-7 -7l-4 4M7 -7l4 -4M-3 0l-1 3M3 0l1 3" fill="none" stroke="#53d9df" stroke-width="2" stroke-linecap="round"/>
+                  columns.setdefault(x + 6, []).append(y + 6)
+          if not cells:
+              raise ValueError("No contribution cells in the source SVG")
+          
+          route = [
+              (x, y)
+              for index, (x, rows) in enumerate(sorted(columns.items()))
+              for y in sorted(rows, reverse=bool(index % 2))
+          ]
+          active_days = len(route)
+          # Return along the same path so the carriage never jumps across the calendar.
+          route += route[-2:0:-1]
+          start_x, start_y = route[0] if route else (8, 8)
+          
+          style = """
+          .rail-robot{display:none}
+          @media(prefers-reduced-motion:reduce){.moving{display:none}.rail-robot{display:inline}}
+          """
+          robot = """
+          <path d="M-16 -34v-3h6v3" fill="none" stroke="#79a1ae" stroke-width="1.4"/>
+          <rect x="-23" y="-34" width="21" height="14" rx="4" fill="#174453" stroke="#53d9df" stroke-width="1"/>
+          <rect x="-20.5" y="-30.5" width="16" height="7" rx="2" fill="#081820"/>
+          <circle cx="-16" cy="-27" r="1.15" fill="#9bf9f8"/>
+          <circle cx="-9" cy="-27" r="1.15" fill="#9bf9f8"/>
+          <rect x="-19" y="-18" width="13" height="10" rx="2.5" fill="#193d4b" stroke="#53aab6"/>
+          <path d="M-16 -8l-2 4h-4m11-4 2 4h4m-14-11-5 4" fill="none" stroke="#65b9c4" stroke-width="1.7" stroke-linecap="round"/>
+          <path d="M-15.5 -13h5" stroke="#80edf0" stroke-width="1.5" stroke-linecap="round"/>
+          """
+          pick = """
+          <path d="M0 0l3.5 2.5 13.5-4" fill="none" stroke="#7598a7" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M12-6q6-1 8 4l1 4-3-2-2-3z" fill="#a6eaf0" stroke="#3b8f9f" stroke-width=".7"/>
+          <circle cx="0" cy="0" r="2" fill="#6ad4db"/>
+          """
+          parts = [f'''<svg xmlns="http://www.w3.org/2000/svg" width="880" height="206" viewBox="-22 -63 880 206" role="img" aria-labelledby="title desc">
+          <title id="title">Atelier de contributions</title>
+          <desc id="desc">Un robot suspendu à une corde s'arrête sur les jours actifs et frappe chaque case deux fois à la pioche. Les {active_days} jours actifs restent visibles.</desc>
+          <style>{style}</style>
+          <path d="M-16 -51H848M-16 -45H848" fill="none" stroke="#304451" stroke-width="1"/>
+          <path d="M-16 -53v10m864-10v10" stroke="#5b7987" stroke-width="1.4"/>
+          <g>''', *cells, '</g>']
+          
+          def carriage(x, y, movement, rope, descent, strikes, sparks):
+              return f'''<g transform="translate({x:g} 0)">
+          {movement}
+          <rect x="-21" y="-54" width="17" height="11" rx="2.5" fill="#182a34" stroke="#4c7a8a"/>
+          <path d="M-17 -50h9" stroke="#70d5db" stroke-width="1.3" stroke-linecap="round"/>
+          <path d="M-12.5 -43v2" stroke="#a4bbc3" stroke-width="1.3"/>
+          <line x1="-12.5" y1="-41" x2="-12.5" y2="{y - 37:g}" stroke="#a1b5bd" stroke-width="1.1">{rope}</line>
+          <g transform="translate(0 {y:g})">
+          {descent}
+          <g opacity="0" fill="none" stroke="#9bf9f8">
+          {sparks}
+          <rect x="-6" y="-6" width="12" height="12" rx="2"/>
+          <path d="M0-5v-4m5 5 3-3m-13 3-3-3" stroke-width="1.2" stroke-linecap="round"/>
+          </g>
+          {robot}
+          <g transform="translate(-8 -15.5)">
+          {strikes}
+          {pick}
+          </g>
+          </g>
           </g>'''
-          parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="880" height="192" viewBox="-16 -32 880 192" role="img" aria-labelledby="robot-title robot-desc"><title id="robot-title">Mon atelier de contributions</title><desc id="robot-desc">Un petit robot IA travaille de contribution en contribution. Les {len(active)} jours actifs restent colorés pendant toute l’animation. Les contributions privées sont anonymisées.</desc><style>{style}</style>']
-          parts.extend(cells)
-          parts.append(f'<g class="moving"><animateTransform attributeName="transform" type="translate" values="{motion}" dur="{duration:g}s" repeatCount="indefinite"/>{robot}</g>')
-          x, y = route[0]
-          parts.append(f'<g class="reduced" transform="translate({x:g} {y:g})">{robot}</g>')
-          parts.append('<g font-family="monospace" font-size="11" fill="#8b949e">')
-          messages = ['Je relie les idées au code.', 'Je construis, un commit à la fois.', 'Je peaufine la prochaine solution.']
-          for index, message in enumerate(messages):
-              parts.append(f'<text class="task" x="2" y="145" style="animation-delay:-{index * 4}s"><tspan fill="#53d9df">❯ </tspan>{escape(message)}</text>')
-          parts.append(f'<text x="848" y="145" text-anchor="end">{len(active)} jours actifs · activité réelle</text></g></svg>')
-          svg = ''.join(parts)
+          
+          if route:
+              frames = [route[0]]
+              times = [0.0]
+              stop = 0.81
+              for index, point in enumerate(route):
+                  frames.extend([point, route[(index + 1) % len(route)]])
+                  times.extend([(index + stop) / len(route), (index + 1) / len(route)])
+              key_times = ";".join(f"{time:.8f}" for time in times)
+              beat = 3.2
+              timing = f'keyTimes="{key_times}" dur="{len(route) * beat:g}s" repeatCount="indefinite"'
+              horizontal = ";".join(f"{x:g} 0" for x, _ in frames)
+              vertical = ";".join(f"0 {y:g}" for _, y in frames)
+              cable = ";".join(f"{y - 37:g}" for _, y in frames)
+              arm = '<animateTransform attributeName="transform" type="rotate" additive="sum" values="-27;-27;-70;62;4;-36;-70;62;10;-27;-27" keyTimes="0;.13;.22;.29;.34;.45;.54;.61;.67;.78;1" dur="3.2s" repeatCount="indefinite"/>'
+              flash = '<animate attributeName="opacity" values="0;0;1;0;0;1;0;0" keyTimes="0;.288;.29;.40;.608;.61;.72;1" dur="3.2s" repeatCount="indefinite"/>'
+              parts.extend([
+                  '<g class="moving">',
+                  carriage(
+                      start_x, start_y,
+                      f'<animateTransform attributeName="transform" type="translate" values="{horizontal}" {timing}/>',
+                      f'<animate attributeName="y2" values="{cable}" {timing}/>',
+                      f'<animateTransform attributeName="transform" type="translate" values="{vertical}" {timing}/>',
+                      arm, flash,
+                  ),
+                  '</g><g class="rail-robot">',
+                  carriage(start_x, start_y, "", "", "", "", ""),
+                  '</g>',
+              ])
+          
+          label = "1 jour actif" if active_days == 1 else f"{active_days} jours actifs"
+          parts.append(f'''<g font-family="monospace" font-size="12" fill="#8596a3">
+          <text x="2" y="133"><tspan fill="#53d9df">❯</tspan> Atelier de contributions</text>
+          <text x="842" y="133" text-anchor="end">{label}</text>
+          </g></svg>''')
+          svg = "\n".join(parts)
           ET.fromstring(svg)
           path.write_text(svg)
           PY
@@ -97,7 +154,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add assets/github-snake.svg
+          git add assets/contribution-atelier.svg
           if ! git diff --cached --quiet; then
             git commit -m 'Update AI robot activity'
             git pull --rebase origin main
