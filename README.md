@@ -1,16 +1,17 @@
-## Hi there 👋
+![Jonathan Leone — Lead Developer. Des idées utiles. Du code pensé pour durer. Des solutions adaptées à votre métier.](assets/banner.svg)
 
-<!--
-**JLeoneEpitech/JLeoneEpitech** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+Lead Developer chez **[Ailix](https://www.ailix.ai/)**.  
+De l’architecture aux applications, je construis des solutions logicielles et IA.
 
-Here are some ideas to get you started:
+![AI / BIG DATA](https://img.shields.io/badge/AI_%2F_BIG_DATA-111a23?style=flat&labelColor=111a23&color=111a23)
+![SOFTWARE ARCHITECTURE](https://img.shields.io/badge/SOFTWARE_ARCHITECTURE-111a23?style=flat&labelColor=111a23&color=111a23)
+![MOBILE EXPERT](https://img.shields.io/badge/MOBILE_EXPERT-111a23?style=flat&labelColor=111a23&color=111a23)
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+### Une contribution à la fois.
+
+![Animation de mes contributions GitHub](assets/github-snake.svg)
+
+### Quelques projets
+
+- [TERMS_MCP](https://github.com/JLeoneEpitech/TERMS_MCP) · HTML
+- [Dev-800-Picture-Compress](https://github.com/JLeoneEpitech/Dev-800-Picture-Compress) · Dart
