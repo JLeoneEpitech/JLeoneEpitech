@@ -8,4 +8,4 @@ De l’architecture aux applications, je construis des solutions logicielles et 
 
 ### Une contribution à la fois.
 
-![Robot IA au travail sur mes contributions](assets/github-snake.svg?v=4)
+![Robot IA suspendu, au travail sur mes contributions](assets/contribution-atelier.svg)
