@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="206" viewBox="-22 -63 880 206" role="img" aria-labelledby="title desc">
 <title id="title">Atelier de contributions</title>
-<desc id="desc">Un robot suspendu visite les colonnes actives dans un ordre mélangé. Il frappe une case par colonne, tandis que les 159 jours actifs restent visibles.</desc>
+<desc id="desc">Un robot suspendu visite les colonnes actives dans un ordre mélangé. Il frappe une case par colonne.</desc>
 <style>
 .rail-robot{display:none}
 @media(prefers-reduced-motion:reduce){.moving{display:none}.rail-robot{display:inline}}
@@ -450,5 +450,5 @@
 </g>
 <g font-family="monospace" font-size="12" fill="#8596a3">
 <text x="2" y="133"><tspan fill="#53d9df">❯</tspan> Atelier de contributions</text>
-<text x="842" y="133" text-anchor="end">159 jours actifs</text>
+
 </g></svg>
