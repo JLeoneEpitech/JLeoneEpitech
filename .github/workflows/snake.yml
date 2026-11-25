@@ -100,8 +100,9 @@ jobs:
           {descent}
           <g opacity="0" fill="none" stroke="#9bf9f8">
           {sparks}
-          <rect x="-6" y="-6" width="12" height="12" rx="2"/>
-          <path d="M0-5v-4m5 5 3-3m-13 3-3-3" stroke-width="1.2" stroke-linecap="round"/>
+          <rect x="-8" y="-8" width="16" height="16" rx="4" fill="#53d9df" stroke="none" opacity=".28"/>
+          <rect x="-6" y="-6" width="12" height="12" rx="2" fill="#a8f6f5" stroke="#d8fffe"/>
+          <path d="M0-8v-4m7 6 3-3m-17 3-3-3" stroke-width="1.2" stroke-linecap="round"/>
           </g>
           {robot}
           <g transform="translate(-8 -15.5)">
@@ -125,7 +126,7 @@ jobs:
               vertical = ";".join(f"0 {y:g}" for _, y in frames)
               cable = ";".join(f"{y - 37:g}" for _, y in frames)
               arm = f'<animateTransform attributeName="transform" type="rotate" additive="sum" values="-27;-27;-70;62;4;-36;-70;62;10;-27;-27" keyTimes="0;.13;.22;.29;.34;.45;.54;.61;.67;.78;1" dur="{beat:g}s" repeatCount="indefinite"/>'
-              flash = f'<animate attributeName="opacity" values="0;0;1;0;0;1;0;0" keyTimes="0;.288;.29;.40;.608;.61;.72;1" dur="{beat:g}s" repeatCount="indefinite"/>'
+              flash = f'<animate attributeName="opacity" values="0;0;1;1;0;0;1;1;0;0" keyTimes="0;.288;.29;.34;.43;.608;.61;.66;.75;1" dur="{beat:g}s" repeatCount="indefinite"/>'
               parts.extend([
                   '<g class="moving">',
                   carriage(
