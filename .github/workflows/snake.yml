@@ -20,19 +20,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Generate cyan contribution snake
+      - name: Generate cyan contribution light
         uses: Platane/snk/svg-only@v3
         with:
           github_user_name: ${{ github.repository_owner }}
           outputs: |
             assets/github-snake.svg?color_snake=#53d9df&color_dots=#18212c,#153b40,#1e6269,#30969a,#61cbd0
+      - name: Keep contributions visible throughout the animation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          path = Path('assets/github-snake.svg')
+          svg = path.read_text()
+          # Keep original contribution fills; only the cyan light moves.
+          persistent = '<style>.c{animation:none!important}.u{display:none}</style>'
+          svg = svg.replace('</svg>', persistent + '</svg>')
+          ET.fromstring(svg)
+          path.write_text(svg)
+          PY
       - name: Save animation
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add assets/github-snake.svg
           if ! git diff --cached --quiet; then
-            git commit -m 'Update contribution snake'
+            git commit -m 'Update contribution light animation'
             git pull --rebase origin main
             git push origin HEAD:main
           fi
