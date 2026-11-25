@@ -1,4 +1,4 @@
-name: Contribution snake
+name: Contribution robot
 
 on:
   schedule:
@@ -20,22 +20,76 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Generate cyan contribution light
+      - name: Generate contribution source
         uses: Platane/snk/svg-only@v3
         with:
           github_user_name: ${{ github.repository_owner }}
           outputs: |
             assets/github-snake.svg?color_snake=#53d9df&color_dots=#18212c,#153b40,#1e6269,#30969a,#61cbd0
-      - name: Keep contributions visible throughout the animation
+      - name: Build AI robot and preserve every contribution
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           import xml.etree.ElementTree as ET
+          from html import escape
+          
           path = Path('assets/github-snake.svg')
-          svg = path.read_text()
-          # Keep original contribution fills; only the cyan light moves.
-          persistent = '<style>.c{animation:none!important}.u{display:none}</style>'
-          svg = svg.replace('</svg>', persistent + '</svg>')
+          source = ET.fromstring(path.read_text())
+          css = next(node.text for node in source if node.tag.endswith('style'))
+          levels = dict(re.findall(r'\.c\.(c\w+)\{fill:var\(--c([1-4])\)', css))
+          palette = ['#18212c', '#153b40', '#1e6269', '#30969a', '#61cbd0']
+          cells, active = [], []
+          for node in source:
+              classes = node.get('class', '').split()
+              if not node.tag.endswith('rect') or not classes or classes[0] != 'c':
+                  continue
+              level = int(levels.get(classes[1], 0)) if len(classes) > 1 else 0
+              x, y = float(node.get('x')), float(node.get('y'))
+              cells.append(f'<rect x="{x:g}" y="{y:g}" width="12" height="12" rx="2" fill="{palette[level]}"/>')
+              if level:
+                  active.append((x + 6, y + 6))
+          active.sort()
+          route = active or [(8, 8)]
+          positions = []
+          for x, y in route:
+              positions.extend([f'{x:g} {y:g}'] * 3)
+          positions.append(positions[0])
+          duration = max(12, len(route) * 1.2)
+          motion = ';'.join(positions)
+          style = '''
+          .robot-sway{transform-box:fill-box;transform-origin:50% 100%;animation:sway 1.5s ease-in-out infinite}
+          @keyframes sway{0%,100%{transform:rotate(-9deg) translateY(0)}50%{transform:rotate(9deg) translateY(-2px)}}
+          .eyes{animation:blink 4.7s linear infinite}
+          @keyframes blink{0%,44%,48%,100%{opacity:1}46%{opacity:.15}}
+          .task{opacity:0;animation:task 12s linear infinite}
+          @keyframes task{0%,30%{opacity:1}33%,100%{opacity:0}}
+          .reduced{display:none}
+          @media(prefers-reduced-motion:reduce){.moving{display:none}.reduced{display:inline}.task{animation:none;opacity:0}.task:first-of-type{opacity:1}.robot-sway,.eyes{animation:none}}
+          '''
+          robot = '''
+          <ellipse cx="0" cy="3" rx="9" ry="2.5" fill="#53d9df" opacity=".18"/>
+          <g class="robot-sway">
+            <path d="M0 -23v-4" stroke="#53d9df" stroke-width="1.5"/>
+            <circle cy="-28" r="2" fill="#a8f6f5"/>
+            <rect x="-8" y="-23" width="16" height="12" rx="4" fill="#53d9df"/>
+            <rect x="-6" y="-21" width="12" height="7" rx="2.5" fill="#0d2831"/>
+            <g class="eyes" fill="#a8f6f5"><circle cx="-3" cy="-17.5" r="1.2"/><circle cx="3" cy="-17.5" r="1.2"/></g>
+            <rect x="-5.5" y="-9" width="11" height="8" rx="2.5" fill="#30969a"/>
+            <circle cy="-5" r="1.5" fill="#a8f6f5"/>
+            <path d="M-7 -7l-4 4M7 -7l4 -4M-3 0l-1 3M3 0l1 3" fill="none" stroke="#53d9df" stroke-width="2" stroke-linecap="round"/>
+          </g>'''
+          parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="880" height="192" viewBox="-16 -32 880 192" role="img" aria-labelledby="robot-title robot-desc"><title id="robot-title">Mon atelier de contributions</title><desc id="robot-desc">Un petit robot IA travaille de contribution en contribution. Les {len(active)} jours actifs restent colorés pendant toute l’animation. Les contributions privées sont anonymisées.</desc><style>{style}</style>']
+          parts.extend(cells)
+          parts.append(f'<g class="moving"><animateTransform attributeName="transform" type="translate" values="{motion}" dur="{duration:g}s" repeatCount="indefinite"/>{robot}</g>')
+          x, y = route[0]
+          parts.append(f'<g class="reduced" transform="translate({x:g} {y:g})">{robot}</g>')
+          parts.append('<g font-family="monospace" font-size="11" fill="#8b949e">')
+          messages = ['Je relie les idées au code.', 'Je construis, un commit à la fois.', 'Je peaufine la prochaine solution.']
+          for index, message in enumerate(messages):
+              parts.append(f'<text class="task" x="2" y="145" style="animation-delay:-{index * 4}s"><tspan fill="#53d9df">❯ </tspan>{escape(message)}</text>')
+          parts.append(f'<text x="848" y="145" text-anchor="end">{len(active)} jours actifs · activité réelle</text></g></svg>')
+          svg = ''.join(parts)
           ET.fromstring(svg)
           path.write_text(svg)
           PY
@@ -45,7 +99,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add assets/github-snake.svg
           if ! git diff --cached --quiet; then
-            git commit -m 'Update contribution light animation'
+            git commit -m 'Update AI robot activity'
             git pull --rebase origin main
             git push origin HEAD:main
           fi
