@@ -29,7 +29,9 @@ jobs:
       - name: Render suspended contribution robot
         run: |
           python3 - <<'PY'
+          from datetime import datetime, timezone
           from pathlib import Path
+          from random import Random
           import re
           import xml.etree.ElementTree as ET
           
@@ -53,14 +55,11 @@ jobs:
           if not cells:
               raise ValueError("No contribution cells in the source SVG")
           
-          route = [
-              (x, y)
-              for index, (x, rows) in enumerate(sorted(columns.items()))
-              for y in sorted(rows, reverse=bool(index % 2))
-          ]
-          active_days = len(route)
-          # Return along the same path so the carriage never jumps across the calendar.
-          route += route[-2:0:-1]
+          active_days = sum(len(rows) for rows in columns.values())
+          # Give each active column one stop, with a new itinerary at each daily refresh.
+          random = Random(datetime.now(timezone.utc).date().isoformat())
+          route = [(x, random.choice(sorted(rows))) for x, rows in sorted(columns.items())]
+          random.shuffle(route)
           start_x, start_y = route[0] if route else (8, 8)
           
           style = """
@@ -84,7 +83,7 @@ jobs:
           """
           parts = [f'''<svg xmlns="http://www.w3.org/2000/svg" width="880" height="206" viewBox="-22 -63 880 206" role="img" aria-labelledby="title desc">
           <title id="title">Atelier de contributions</title>
-          <desc id="desc">Un robot suspendu à une corde s'arrête sur les jours actifs et frappe chaque case deux fois à la pioche. Les {active_days} jours actifs restent visibles.</desc>
+          <desc id="desc">Un robot suspendu visite les colonnes actives dans un ordre mélangé. Il frappe une case par colonne, tandis que les {active_days} jours actifs restent visibles.</desc>
           <style>{style}</style>
           <path d="M-16 -51H848M-16 -45H848" fill="none" stroke="#304451" stroke-width="1"/>
           <path d="M-16 -53v10m864-10v10" stroke="#5b7987" stroke-width="1.4"/>
@@ -115,18 +114,18 @@ jobs:
           if route:
               frames = [route[0]]
               times = [0.0]
-              stop = 0.81
+              beat = 4.75
+              stop = 3.8 / beat
               for index, point in enumerate(route):
                   frames.extend([point, route[(index + 1) % len(route)]])
                   times.extend([(index + stop) / len(route), (index + 1) / len(route)])
               key_times = ";".join(f"{time:.8f}" for time in times)
-              beat = 3.2
               timing = f'keyTimes="{key_times}" dur="{len(route) * beat:g}s" repeatCount="indefinite"'
               horizontal = ";".join(f"{x:g} 0" for x, _ in frames)
               vertical = ";".join(f"0 {y:g}" for _, y in frames)
               cable = ";".join(f"{y - 37:g}" for _, y in frames)
-              arm = '<animateTransform attributeName="transform" type="rotate" additive="sum" values="-27;-27;-70;62;4;-36;-70;62;10;-27;-27" keyTimes="0;.13;.22;.29;.34;.45;.54;.61;.67;.78;1" dur="3.2s" repeatCount="indefinite"/>'
-              flash = '<animate attributeName="opacity" values="0;0;1;0;0;1;0;0" keyTimes="0;.288;.29;.40;.608;.61;.72;1" dur="3.2s" repeatCount="indefinite"/>'
+              arm = f'<animateTransform attributeName="transform" type="rotate" additive="sum" values="-27;-27;-70;62;4;-36;-70;62;10;-27;-27" keyTimes="0;.13;.22;.29;.34;.45;.54;.61;.67;.78;1" dur="{beat:g}s" repeatCount="indefinite"/>'
+              flash = f'<animate attributeName="opacity" values="0;0;1;0;0;1;0;0" keyTimes="0;.288;.29;.40;.608;.61;.72;1" dur="{beat:g}s" repeatCount="indefinite"/>'
               parts.extend([
                   '<g class="moving">',
                   carriage(
